@@ -10,13 +10,14 @@ import time
 
 class ReadThread (threading.Thread):
 
-	def __init__(self, name, csoc, threadQueue, screenQueue):
+	def __init__(self, name, csoc, threadQueue, screenQueue, application):
 		threading.Thread.__init__(self)
 		self.name = name
 		self.csoc = csoc
 		self.nickname = ""
 		self.threadQueue = threadQueue
 		self.screenQueue = screenQueue
+		self.app = application
 
 	def incoming_parser(self, data):
 		theTime = time.strftime("%H:%M:%S")
@@ -84,10 +85,15 @@ class ReadThread (threading.Thread):
 			
 			elif data[0:3] == "LSA":
 				splitted = rest.split(":")
+				listOfUsers = splitted
 				msg = "<SYSTEM> Registered nicks: "
 				for i in splitted:
 					msg += i + ", "
 				msg = msg[:-2]
+				self.app.model.clear()
+				for user in listOfUsers:
+					nickLister = QStandardItem(user)
+					self.app.model.appendRow(nickLister)
 			
 			elif data[0:3] == "TOC":
 				msg = "TOC!"
@@ -183,6 +189,8 @@ class ClientDialog(QDialog):
 		
 		# The users' section
 		self.userList = QListView()
+		self.model = QStandardItemModel(self.userList)
+		self.userList.setModel(self.model)
 		
 		# Connect the Go button to its callback
 		self.send_button.clicked.connect(self.outgoing_parser)
@@ -199,7 +207,7 @@ class ClientDialog(QDialog):
 		self.timer.timeout.connect(self.updateChannelWindow)
 		
 		# update every 10 ms
-		self.timer.start(1000)
+		self.timer.start(10)
 		
 		# Use the vertical layout for the current window
 		self.setLayout(self.vbox)
@@ -283,7 +291,7 @@ screenQueue = Queue.Queue()
 app = ClientDialog(sendQueue, screenQueue)
 
 # start threads
-rt = ReadThread("ReadThread", s, sendQueue, screenQueue)
+rt = ReadThread("ReadThread", s, sendQueue, screenQueue, app)
 rt.start()
 
 wt = WriteThread("WriteThread", s, sendQueue)
