@@ -121,8 +121,6 @@ class ReadThread (threading.Thread):
 		while True:
 			data = self.csoc.recv(4096)
 			self.incoming_parser(data)
-			#...
-			#...
 
 
 class WriteThread (threading.Thread):
@@ -139,9 +137,6 @@ class WriteThread (threading.Thread):
 		while True:
 			if self.threadQueue.qsize() > 0:
 				queue_message = self.threadQueue.get()
-				#...
-				#...
-				#...
 				self.csoc.send(queue_message)
 				#try:
 				#	self.csoc.send(queue_message)
@@ -223,6 +218,7 @@ class ClientDialog(QDialog):
 
 	def outgoing_parser(self):
 		data = self.sender.text()
+		self.cprint("Me : " + ''.join(str(data)))
 		
 		# Handle empty input from user
 		if len(data) == 0:
