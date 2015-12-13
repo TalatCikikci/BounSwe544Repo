@@ -25,7 +25,7 @@ class ReadThread (threading.Thread):
 			return
 		
 		# Handle message with first word longer than 3 letters
-		elif len(data) > 3 and not data[3] == " ":
+		elif len(data) > 3 and not data[3] == " " and loginStatus:
 			response = "ERR"
 			self.csoc.send(response)
 			return
@@ -38,7 +38,7 @@ class ReadThread (threading.Thread):
 				msg = "Goodbye " + username + ", we hope to see you again!"
 			
 			elif data[0:3] == "ERL":
-				msg = "You need to login to do that. Login command: USR <username>"
+				msg = "You need to login to do that. Login command: /nick <username>"
 			
 			elif data[0:3] == "HEL":
 				username = rest.strip()
@@ -68,8 +68,8 @@ class ReadThread (threading.Thread):
 				splitted = rest.split(":")
 				msg = "-Server- Registered nicks: "
 				for i in splitted:
-					msg += i + ","
-				msg = msg[:-1]
+					msg += i + ", "
+				msg = msg[:-2]
 			
 			elif data[0:3] == "TOC":
 				msg = "TOC!"
@@ -84,8 +84,9 @@ class ReadThread (threading.Thread):
 				msg = "Invalid command."
 			
 			else:
-				response = "ERR"
-				self.csoc.send(response)
+				if loginStatus:
+					response = "ERR"
+					self.csoc.send(response)
 				return
 
 		
@@ -94,7 +95,7 @@ class ReadThread (threading.Thread):
 
 	def run(self):
 		while True:
-			data = self.csoc.recv(1024)
+			data = self.csoc.recv(2048)
 			self.incoming_parser(data)
 			#...
 			#...
@@ -118,11 +119,11 @@ class WriteThread (threading.Thread):
 				#...
 				#...
 				self.csoc.send(queue_message)
-				try:
-					self.csoc.send(queue_message)
-				except socket.error:
-					self.csoc.close()
-					break
+				#try:
+				#	self.csoc.send(queue_message)
+				#except socket.error:
+				#	self.csoc.close()
+				#	break
 
 
 class ClientDialog(QDialog):
@@ -208,29 +209,43 @@ class ClientDialog(QDialog):
 		
 		# Valid user messages start with a "/"
 		if data[0] == "/":
-			theCommandText = ''.join(data[1:])
+			theCommandText = ''.join(str(data[1:]))
 			theCommandList = theCommandText.split()
 			command = theCommandList[0]
-			delta = theCommandList[1:]
-			delta = ':'.join(delta)
+			deltaSplitted = theCommandList[1:]
+			delta = ':'.join(deltaSplitted)
+			
+			self.cprint(theCommandText)
+			
+			self.cprint(command)
+			self.cprint(delta)
 			
 			if command == "nick":
 				self.threadQueue.put("USR " + delta)
+				self.cprint("Attempting to login as " + delta)
 			
-			if command == "list":
+			elif command == "list":
 				self.threadQueue.put("LSQ")
+				self.cprint("Fetching user list...")
 			
 			elif command == "quit":
 				self.threadQueue.put("QUI")
+				self.cprint("Logging out.")
 			
 			elif command == "msg":
 				self.threadQueue.put("MSG " + delta)
+				self.cprint("Sending private message to \"" + deltaSplitted[1] + "\" : " + deltaSplitted[2] + "\"")
+				
+			elif command == "tic":
+				self.threadQueue.put("TIC")
+				self.cprint("TIC...")
 			
 			else:
 				self.cprint("Local: Command Error.")
 		
 		else:
-			self.threadQueue.put("SAY " + data)
+			sayString = ''.join(str(data))
+			self.threadQueue.put("SAY " + sayString)
 		
 		self.sender.clear()
 
@@ -245,13 +260,14 @@ class ClientDialog(QDialog):
 
 
 # connect to the server
-s = socket.socket()
+s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 connectString = sys.argv[1]
 connectParams = connectString.split(":")
 host = connectParams[0]
 port = int(connectParams[1])
 s.connect((host,port))
 
+loginStatus = False
 sendQueue = Queue.Queue()
 screenQueue = Queue.Queue()
 
