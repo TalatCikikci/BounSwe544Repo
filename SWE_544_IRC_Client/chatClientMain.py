@@ -55,7 +55,7 @@ class ReadThread (threading.Thread):
 			elif data[0:3] == "MSG":
 				splitted = rest.split(":")
 				username = splitted[0]
-				message = splitted[1]
+				message = ' '.join(splitted[1:])
 				msg = username + " <private> : " + message
 			
 			elif data[0:3] == "SAY":
@@ -98,7 +98,7 @@ class ReadThread (threading.Thread):
 
 	def run(self):
 		while True:
-			data = self.csoc.recv(2048)
+			data = self.csoc.recv(4096)
 			self.incoming_parser(data)
 			#...
 			#...
@@ -232,7 +232,7 @@ class ClientDialog(QDialog):
 			
 			elif command == "msg":
 				self.threadQueue.put("MSG " + delta)
-				self.cprint("Sending private message to \"" + deltaSplitted[1] + "\" : " + deltaSplitted[2] + "\"")
+				self.cprint("Sending private message to \"" + deltaSplitted[0] + "\" : \"" + ' '.join(deltaSplitted[1:]) + "\"")
 				
 			elif command == "tic":
 				self.threadQueue.put("TIC")
