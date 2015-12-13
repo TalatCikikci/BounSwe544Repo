@@ -19,7 +19,8 @@ class ReadThread (threading.Thread):
 		self.screenQueue = screenQueue
 
 	def incoming_parser(self, data):
-	
+		theTime = time.strftime("%H:%M:%S")
+		
 		# Handle empty message from server
 		if len(data) == 0:
 			return
@@ -29,6 +30,11 @@ class ReadThread (threading.Thread):
 			response = "ERR"
 			self.csoc.send(response)
 			return
+		
+		# This condition responds to server "TIC" with a "TOC" but due to server bug server responds again with an "ERR". So it is commented out for now.
+		#elif data[0:3] == "TIC":
+			#response = "TOC"
+			#self.csoc.send(response)
 		
 		else:
 			rest = data[4:]
@@ -42,7 +48,7 @@ class ReadThread (threading.Thread):
 			
 			elif data[0:3] == "HEL":
 				username = rest.strip()
-				msg = "Login successful.\nHello " + username + "!"
+				msg = "Login successful. Welcome " + username + "!"
 			
 			elif data[0:3] == "REJ":
 				username = rest.strip()
@@ -57,19 +63,28 @@ class ReadThread (threading.Thread):
 				username = splitted[0]
 				message = ' '.join(splitted[1:])
 				msg = username + " <private> : " + message
+				# This condition responds to server "MSG" with a "MOK" but due to server bug server responds again with an "ERR". So it is commented out for now.
+				#response = "MOK"
+				#self.csoc.send(response)
 			
 			elif data[0:3] == "SAY":
 				splitted = rest.split(":")
 				username = splitted[0]
 				message = splitted[1]
 				msg = username + " : " + message
+				# This condition responds to server "SAY" with a "SOK" but due to server bug server responds again with an "ERR". So it is commented out for now.
+				# response = "SOK"
+				# self.csoc.send(response)
 			
 			elif data[0:3] == "SYS":
-				msg = "<SYSTEM MESSAGE> : " + rest
+				msg = "<SYSTEM> : " + rest
+				# This condition responds to server "SYS" with a "YOK" but due to server bug server responds again with an "ERR". So it is commented out for now.
+				# response = "YOK"
+				# self.csoc.send(response)
 			
 			elif data[0:3] == "LSA":
 				splitted = rest.split(":")
-				msg = "<SYSTEM MESSAGE> Registered nicks: "
+				msg = "<SYSTEM> Registered nicks: "
 				for i in splitted:
 					msg += i + ", "
 				msg = msg[:-2]
@@ -94,7 +109,7 @@ class ReadThread (threading.Thread):
 
 		
 			#self.app.cprint(msg)
-			self.screenQueue.put(msg)
+			self.screenQueue.put(theTime + " " + msg)
 
 	def run(self):
 		while True:
@@ -190,17 +205,12 @@ class ClientDialog(QDialog):
 		self.setLayout(self.vbox)
 
 	def cprint(self, data):
-		#...
-		#...
-		#...
-		self.channel.append(data)
+		theTime = time.strftime("%H:%M:%S")
+		self.channel.append(theTime + " " + data)
 
 	def updateChannelWindow(self):
 		if self.screenQueue.qsize() > 0:
 			queue_message = self.screenQueue.get()
-			#...
-			#...
-			#...
 			self.channel.append(queue_message)
 
 	def outgoing_parser(self):
@@ -219,23 +229,23 @@ class ClientDialog(QDialog):
 			delta = ':'.join(deltaSplitted)
 			
 			if command == "nick":
-				self.threadQueue.put("USR " + delta)
+				self.threadQueue.put("USR " + delta + "\n")
 				self.cprint("Attempting to login as " + delta + "...")
 			
 			elif command == "list":
-				self.threadQueue.put("LSQ")
+				self.threadQueue.put("LSQ\n")
 				self.cprint("Fetching user list...")
 			
 			elif command == "quit":
-				self.threadQueue.put("QUI")
+				self.threadQueue.put("QUI\n")
 				self.cprint("Logging out.")
 			
 			elif command == "msg":
-				self.threadQueue.put("MSG " + delta)
-				self.cprint("Sending private message to \"" + deltaSplitted[0] + "\" : \"" + ' '.join(deltaSplitted[1:]) + "\"")
+				self.threadQueue.put("MSG " + delta + "\n")
+				self.cprint("Sending private message to <" + deltaSplitted[0] + "> : \"" + ' '.join(deltaSplitted[1:]) + "\"")
 				
 			elif command == "tic":
-				self.threadQueue.put("TIC")
+				self.threadQueue.put("TIC\n")
 				self.cprint("TIC...")
 			
 			else:
@@ -243,7 +253,7 @@ class ClientDialog(QDialog):
 		
 		else:
 			sayString = ''.join(str(data))
-			self.threadQueue.put("SAY " + sayString)
+			self.threadQueue.put("SAY " + sayString + "\n")
 			#self.cprint(sayString)
 		
 		self.sender.clear()
