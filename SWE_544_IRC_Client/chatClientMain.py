@@ -42,7 +42,7 @@ class ReadThread (threading.Thread):
 			
 			elif data[0:3] == "HEL":
 				username = rest.strip()
-				msg = "Login successful. Hello " + username
+				msg = "Login successful.\nHello " + username + "!"
 			
 			elif data[0:3] == "REJ":
 				username = rest.strip()
@@ -59,14 +59,17 @@ class ReadThread (threading.Thread):
 				msg = username + " <private> : " + message
 			
 			elif data[0:3] == "SAY":
-				msg = "Someone says " + rest[0]
+				splitted = rest.split(":")
+				username = splitted[0]
+				message = splitted[1]
+				msg = username + " : " + message
 			
 			elif data[0:3] == "SYS":
-				msg = "<SYSTEM MESSAGE> : " + rest[0]
+				msg = "<SYSTEM MESSAGE> : " + rest
 			
 			elif data[0:3] == "LSA":
 				splitted = rest.split(":")
-				msg = "-Server- Registered nicks: "
+				msg = "<SYSTEM MESSAGE> Registered nicks: "
 				for i in splitted:
 					msg += i + ", "
 				msg = msg[:-2]
@@ -215,14 +218,9 @@ class ClientDialog(QDialog):
 			deltaSplitted = theCommandList[1:]
 			delta = ':'.join(deltaSplitted)
 			
-			self.cprint(theCommandText)
-			
-			self.cprint(command)
-			self.cprint(delta)
-			
 			if command == "nick":
 				self.threadQueue.put("USR " + delta)
-				self.cprint("Attempting to login as " + delta)
+				self.cprint("Attempting to login as " + delta + "...")
 			
 			elif command == "list":
 				self.threadQueue.put("LSQ")
@@ -246,6 +244,7 @@ class ClientDialog(QDialog):
 		else:
 			sayString = ''.join(str(data))
 			self.threadQueue.put("SAY " + sayString)
+			#self.cprint(sayString)
 		
 		self.sender.clear()
 
