@@ -10,7 +10,6 @@ def incoming_parser(self, data):
 		self.csoc.send(response)
 		return
 	
-	
 	rest = data[4:]
 	
 	elif data[0:3] == "BYE":
