@@ -1,0 +1,19 @@
+# Import socket module
+import socket
+
+# Create a TCP socket object
+bingoAppSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Set host IP and Port variables to bind the socket
+host = socket.gethostbyname(socket.gethostname())
+port = 12345
+
+# Bind to the port
+bingoAppSocket.bind((host, port))
+
+# Now wait for client connection.
+bingoAppSocket.listen(5)
+while True:
+	bingoPlayerSocket, addr = bingoAppSocket.accept() # Establish connection with client.
+	print 'Got connection from', addr
+	bingoPlayerSocket.send('Thank you for connecting!')
+bingoPlayerSocket.close() # Close the connection
