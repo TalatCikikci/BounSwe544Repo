@@ -6,20 +6,20 @@ import time
 
 # Create a TCP socket object
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# Set host IP and Port variables to bind the socket
 
 sendQueue = Queue.Queue()
 screenQueue = Queue.Queue()
 
-clientSocket.connect(('192.168.0.14',12345))
-
+# Set host IP and Port variables to bind the socket
+host = '192.168.0.14'
+port = 12345
 
 # host = raw_input('Enter server IP: ')
 # port = raw_input('Enter server port: ')
-# print('Connecting to ' + host + ':' + port + '...')
+print('Connecting to ' + host + ':' + port + '...')
 
-# # Bind to the port
-# clientSocket.connect((host, int(port)))
+# Bind to the port
+clientSocket.connect((host, int(port)))
 print('Connected!')
 
 nickname = raw_input('Enter your nickname: ')
@@ -31,7 +31,7 @@ nickname = raw_input('Enter your nickname: ')
 rt = ReadThread("ReadThread", clientSocket, sendQueue, screenQueue, nickname)
 rt.start()
 
-wt = WriteThread("WriteThread", clientSocket, sendQueue)
+wt = WriteThread("WriteThread", clientSocket, sendQueue, nickname)
 wt.start()
 
 rt.join()
@@ -44,7 +44,7 @@ class ReadThread (threading.Thread):
 		threading.Thread.__init__(self)
 		self.name = name
 		self.csoc = csoc
-		self.nickname = userName
+		self.userName = userName
 		self.threadQueue = threadQueue
 		self.screenQueue = screenQueue
 
@@ -149,13 +149,15 @@ class ReadThread (threading.Thread):
 			
 class WriteThread (threading.Thread):
 
-	def __init__(self, name, csoc, threadQueue):
+	def __init__(self, name, csoc, threadQueue, userName):
 		threading.Thread.__init__(self)
 		self.name = name
 		self.csoc = csoc
+		self.userName = userName
 		self.threadQueue = threadQueue
 
 	def run(self):
+		self.csoc.send('USERNAME:'+self.userName)
 		while True:
 			if self.threadQueue.qsize() > 0:
 				queue_message = self.threadQueue.get()
