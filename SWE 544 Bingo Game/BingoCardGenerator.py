@@ -67,7 +67,9 @@ def generateBingoCard():
 	# This commented section is for debugging.
 	# for i in range(3):
 		# print(bingoCard[i])
-		
+	
+	cardChecklist = sorted(cardChecklist)
+	
 	return bingoCard, cardChecklist
 	
 generateBingoCard()

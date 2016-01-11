@@ -1,5 +1,16 @@
-import BingoCardGenerator
+# import BingoCardGenerator
+# bingoTuple = BingoCardGenerator.generateBingoCard()
+# print bingoTuple[0]
+# print bingoTuple[1]
 
-bingoTuple = BingoCardGenerator.generateBingoCard()
+import Game
+import threading
 
-print bingoTuple[0]
+players = []
+players.append("ali")
+players.append("veli")
+
+game = Game.GameSession(1, players)
+game.start()
+
+game.join()
