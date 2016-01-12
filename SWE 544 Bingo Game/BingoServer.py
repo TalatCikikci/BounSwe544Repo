@@ -36,7 +36,11 @@ bingoAppSocket.listen(5)
 while True:
 	print('Waiting for new connection...')
 	# Listen socket for read event every 5 ms
-	connections, wlist, xlist = select.select([bingoAppSocket], [], [], 0.05)
+	try:
+		connections, wlist, xlist = select.select([bingoAppSocket], [], [], 0.05)
+	except KeyboardInterrupt:
+		raise SystemExit
+		
 	
 	print('test1')
 	# Establish connection with client.
@@ -84,6 +88,6 @@ while True:
 	
 # Close the connections
 rt.join()
-# wt.join()
+wt.join()
 client.close()
-bingoPlayerSocket.close() 
+bingoPlayerSocket.close()

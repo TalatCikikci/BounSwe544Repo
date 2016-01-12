@@ -29,7 +29,7 @@ class ReadThread (threading.Thread):
 				command = data
 			
 			if command == 'LOGIN':
-				username = parameter.strip()
+				username = ' '.join(parameter).strip()
 				######### USERNAME CHECK HERE
 					####### IF USERNAME IN USER LIST SEND LOGINREJ
 				msg = 'LOGINOK:' + username

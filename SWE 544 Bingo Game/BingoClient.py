@@ -17,7 +17,7 @@ port = 12345
 
 # host = raw_input('Enter server IP: ')
 # port = raw_input('Enter server port: ')
-print('Connecting to ' + host + ':' + port + '...')
+print('Connecting to ' + host + ':' + str(port) + '...')
 
 # Bind to the port
 clientSocket.connect((host, int(port)))
@@ -27,17 +27,6 @@ nickname = raw_input('Enter your nickname: ')
 
 # data = clientSocket.recv(4096)
 # print(data)
-
-# start threads
-rt = ReadThread("ReadThread", clientSocket, writeQueue, screenQueue, nickname)
-rt.start()
-
-wt = WriteThread("WriteThread", clientSocket, writeQueue, nickname)
-wt.start()
-
-rt.join()
-wt.join()
-clientSocket.close()
 
 class ReadThread (threading.Thread):
 
@@ -67,6 +56,9 @@ class ReadThread (threading.Thread):
 				command = data
 			
 			if command == 'LOGINOK':
+				username = ' '.join(parameter).strip()
+				scr = 'LOGINOK:' + username
+				self.screenQueue.put(scr)
 				msg = 'LISTSES'
 				self.writeQueue.put(msg)
 			
@@ -79,17 +71,18 @@ class ReadThread (threading.Thread):
 				self.csoc.close()
 			
 			elif command == 'SESSION':
-			################################################### param[0] --> nr of sessions
-															#	param[1] --> session name
-															#	param[2:]--> user list of session
-															#	MOVE THIS TO SCREEN THREAD AND KEEP SESSION INFO UNTIL SELECTION
+				if self.readSessions == 0:
+					scr = 'SESNEW'
+					self.screenQueue.put(scr)
+					
 				totalSessions = int(parameter[0])
 				sessionName = parameter[1].strip()
-				playersInSession = []
-				for iter in range(len(parameter)-2):
-					playersInSession = playersInSession.append(parameter[iter+2])
-				print('Session ' + iter+1 + ':' + sessionName + '\nPlayers in session:' + playersInSession + '\n' )
+				playersInSession = parameter[2:]
+				playersInSession = ':'.join(playersInSession)
+				scr = 'SESADD:' + sessionName + ':' + playersInSession
+				self.screenQueue.put(scr)
 				self.readSessions += 1
+				
 				if self.readSessions == totalSessions:
 					scr = 'SESDONE'
 					self.screenQueue.put(scr)
@@ -97,7 +90,7 @@ class ReadThread (threading.Thread):
 			
 			elif command == 'JOINOK':
 				scr = 'JOINOK'
-				self.writeQueue.put(msg)
+				self.screenQueue.put(scr)
 				
 			elif command == 'ENDTURN':
 				msg = 'ENDTURNOK'
@@ -131,7 +124,7 @@ class ReadThread (threading.Thread):
 
 	def run(self):
 		while True:
-			data = self.csoc.recv(4096)
+			data = self.csoc.recv(1024)
 			self.incoming_parser(data)
 			
 class WriteThread (threading.Thread):
@@ -163,21 +156,75 @@ class SessionDisplayThread (threading.Thread):
 		self.userName = userName
 		self.writeQueue = writeQueue
 		self.screenQueue = screenQueue
+		self.gatheredSessions = []
+		self.gatheredSessionsNr = 1
+	
+	def parseScreen(self, screen_message):
 		
+		if len(screen_message) == 0:
+			return
+			
+		else:
+			if ':' in screen_message:
+				temp = screen_message.split(':')
+				#print(temp)
+				command = temp[0]
+				parameter = temp[1:]
+			else:
+				command = screen_message
+		
+			if command == 'LOGINOK':
+				acceptedNick = ' '.join(parameter).strip()
+				self.userName = acceptedNick
+				print('Hello ' + self.userName + '! You can choose a pending game session, or create a new one!')
+		
+			if command == 'SESNEW':
+				self.gatheredSessions = []
+				self.gatheredSessionsNr = 1
+		
+			if command == 'SESADD':
+				splitted = screen_message.split(':')
+				sessionName = splitted[0]
+				playersInSession = splitted[1:]
+				playersInSession = ', '.join(playersInSession)
+				sessionTuple = [self.gatheredSessionsNr, sessionName, playersInSession]
+				self.gatheredSessions.append(sessionTuple)
+				self.gatheredSessionsNr += 1
+			
+			if command == 'SESDONE':
+				for iter in range(len(self.gatheredSessions)):
+					printTuple = self.gatheredSessions[iter]
+					print('Session ' + printTuple[1] + ': ' + printTuple[2] + '\n')
+					print('Players :' + printTuple[3])
+				sessionSelection = raw_input('Please type the session number you wish to join: ')
+				########### IMPLEMENT HOW THE SESSOPN WILL BE RECOGNIZED IN SERVER SIDE
+				wrt = 'JOINSES:' + sessionSelection
+				self.writeQueue.put(wrt)
+				
+			if command == 'JOINOK':
+				wrt = 'Joined selected session.'
+				self.writeQueue.put(wrt)
+				
 	def run(self):
 		while True:
 			if self.screenQueue.qsize() > 0:
-				screen_message = self.screenQueue.get()
+				screenMessage = self.screenQueue.get()
+				self.parseScreen(screenMessage)
 				
-				if screen_message == 'SESDONE':
-					sessionSelection = raw_input('Please type the session name you wish to join: ')
-					wrt = 'JOINSES:'sessionSelection
-					self.writeQueue.put(wrt)
+
+###############################  MAIN
 				
-				
-				
-				
-				
-				
-				
-		
+# start threads
+rt = ReadThread("ReadThread", clientSocket, writeQueue, screenQueue, nickname)
+rt.start()
+
+wt = WriteThread("WriteThread", clientSocket, writeQueue, nickname)
+wt.start()
+
+st = SessionDisplayThread("SessionDisplayThread", writeQueue, screenQueue, nickname)
+st.start()
+
+st.join()
+rt.join()
+wt.join()
+clientSocket.close()
