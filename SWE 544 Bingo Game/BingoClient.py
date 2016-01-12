@@ -157,7 +157,7 @@ class WriteThread (threading.Thread):
 		self.threadQueue = threadQueue
 
 	def run(self):
-		self.csoc.send('USERNAME:'+self.userName)
+		self.csoc.send('LOGIN:'+self.userName)
 		while True:
 			if self.threadQueue.qsize() > 0:
 				queue_message = self.threadQueue.get()
