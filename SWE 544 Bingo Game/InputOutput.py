@@ -24,18 +24,21 @@ class ReadThread (threading.Thread):
 				splitted = data.split(':')
 				print(splitted)
 				command = splitted[0]
-				parameter = splitted[1]
+				parameter = splitted[1:]
 			else:
 				command = data
 			
 			if command == 'LOGIN':
 				username = parameter.strip()
 				######### USERNAME CHECK HERE
+					####### IF USERNAME IN USER LIST SEND LOGINREJ
 				msg = 'LOGINOK:' + username
 				self.writeQueue.put(msg)
 			
 			elif command == 'LOGOUT':
-				msg = 'LOGOUTOK:' + username
+				username = parameter.strip()
+				###### REMOVE USERNAME FROM USER LIST
+				msg = 'LOGOUTOK'
 				self.writeQueue.put(msg)
 			
 			elif command == 'LISTSES':
