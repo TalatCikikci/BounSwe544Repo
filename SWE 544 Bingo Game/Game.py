@@ -1,6 +1,23 @@
 import threading
 import random
 import time
+import InputOutput
+
+countdown = False
+
+class CoundownClock (threading.Thread):
+	
+	def __init__(self, timeoutTime, countdown):
+		threading.Thread.__init__(self)
+		self.timeoutTime = timeoutTime
+		self.countdown = countdown
+
+	def run(self):
+		time = self.timeoutTime
+		while time > 0:
+			sleep(1)
+			time = time-1
+		self.countdown = True
 
 class GameSession (threading.Thread):
 	
@@ -13,6 +30,7 @@ class GameSession (threading.Thread):
 		self.userGameArray = []
 		self.userUpdatedArray = []
 		self.drawnNumbers = []
+		self.countdown = countdown
 		
 	def countdown(initTime):
 		time = initTime
@@ -134,6 +152,15 @@ class GameSession (threading.Thread):
 		return bingoCard, cardChecklist
 				
 	def run(self):
+		printFlag = True
+		timeoutCountdown = CoundownClock(self.timeout, self.countdown)
+		while len(self.userList) < self.maxPlayers:
+			if self.countdown:
+				timeoutCountdown.join()
+				self.countdown = False
+				break
+		
+		
 		self.prepareSession()
 		# Commented out print for testing purposes.
 		# print(self.userGameArray)
@@ -149,8 +176,8 @@ class GameSession (threading.Thread):
 			###### CHECK FOR BINGO
 			###### CHECK FOR CINKO
 			
+			timeoutCountdown = CoundownClock(20, self.countdown)
 			while okCount < len(self.userList):
-				if countdown(20):
+				if self.countdown:
 					break
 
-		

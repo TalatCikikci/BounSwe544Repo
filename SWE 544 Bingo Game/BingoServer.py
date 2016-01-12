@@ -48,12 +48,14 @@ while True:
 	#print('test1')
 	# Establish connection with client.
 	for connection in connections:
+		print(connection)
 		#print('test4')
 		bingoPlayerSocket, playerAddress = connection.accept()
 		#print('test2')
 		bingoPlayerSocket.setblocking(0)
 		#print('test3')
 		connectedClients.append(bingoPlayerSocket)
+		print(connectedClients)
 		tempPort = str(playerAddress[1])
 		tempIP = playerAddress[0]
 		print('Got connection from ' + tempIP + ':' + tempPort)
