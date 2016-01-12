@@ -2,6 +2,9 @@
 import socket
 import thread
 import select
+import InputOutput
+import Queue
+import pickle
 
 # Create a TCP socket object
 bingoAppSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -15,7 +18,17 @@ print('Server socket binding at ' + host + ':' + str(port) + ' ...')
 bingoAppSocket.bind((host, port))
 print('Server socket bound.')
 
+recvQueue = Queue.Queue()
+sendQueue = Queue.Queue()
+screenQueue = Queue.Queue()
 connectedClients = []
+
+# start paraser threads
+rt = InputOutput.ReadThread(1, bingoAppSocket, recvQueue, sendQueue, screenQueue)
+rt.start()
+
+# wt = InputOutput.WriteThread(2, bingoAppSocket, sendQueue)
+# wt.start()
 
 # Now wait for client connection.
 bingoAppSocket.listen(5)
@@ -37,14 +50,26 @@ while True:
 		pass
 	else:
 		for client in clientList:
-			data = client.recv(1024)
-			readData(data)
-			data = writeData()
-			client.send(data)
+			try:
+				data = client.recv(1024)
+				data = pickle.loads(data)
+			except socket.error:
+				pass
+
+			rt.readQueue.put(data)
+			data = rt.writeQueue.get()
+			data = pickle.dumps(data)
+			# wt.writeQueue.put(data)
+			try:
+				client.send(data)
+			except socket.error:
+				pass
 
 	print clientList
 	print connectedClients
 	
 # Close the connections
+rt.join()
+# wt.join()
 client.close()
 bingoPlayerSocket.close() 
