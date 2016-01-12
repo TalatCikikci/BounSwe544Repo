@@ -2,6 +2,7 @@
 import socket
 import threading
 import Queue
+import Game
 
 class ReadThread (threading.Thread):
 
@@ -12,6 +13,7 @@ class ReadThread (threading.Thread):
 		self.readQueue = readQueue
 		self.screenQueue = screenQueue
 		self.writeQueue = writeQueue
+		self.sessionList = []
 
 	def incoming_parser(self, data):
 		
@@ -22,7 +24,7 @@ class ReadThread (threading.Thread):
 		else:
 			if ':' in data:
 				splitted = data.split(':')
-				print(splitted)
+				#print(splitted)
 				command = splitted[0]
 				parameter = splitted[1:]
 			else:
@@ -39,6 +41,15 @@ class ReadThread (threading.Thread):
 				username = parameter.strip()
 				###### REMOVE USERNAME FROM USER LIST
 				msg = 'LOGOUTOK'
+				self.writeQueue.put(msg)
+			
+			elif command == 'CREATESES':
+				name = parameter[0].strip()
+				maxPlayer = parameter[1]
+				gt = Game.GameSession(name, maxPlayer)
+				gt.start()
+				self.sessionList.append(gt)
+				msg = 'CREATEOK:' + name
 				self.writeQueue.put(msg)
 			
 			elif command == 'LISTSES':

@@ -23,7 +23,7 @@ print('Connecting to ' + host + ':' + str(port) + '...')
 clientSocket.connect((host, int(port)))
 print('Connected!')
 
-nickname = raw_input('Enter your nickname: ')
+nickname = raw_input('\nEnter your nickname: ')
 
 # data = clientSocket.recv(4096)
 # print(data)
@@ -49,7 +49,7 @@ class ReadThread (threading.Thread):
 		else:
 			if ':' in data:
 				splitted = data.split(':')
-				print(splitted)
+				#print(splitted)
 				command = splitted[0]
 				parameter = splitted[1:]
 			else:
@@ -59,8 +59,6 @@ class ReadThread (threading.Thread):
 				username = ' '.join(parameter).strip()
 				scr = 'LOGINOK:' + username
 				self.screenQueue.put(scr)
-				msg = 'LISTSES'
-				self.writeQueue.put(msg)
 			
 			elif command == 'LOGINREJ':
 				nickname = raw_input('Enter your nickname: ')
@@ -117,6 +115,11 @@ class ReadThread (threading.Thread):
 				msg = 'TOC'
 				self.writeQueue.put(msg)
 				
+			elif command == 'CREATEOK':
+				gname = ' '.join(parameter).strip()
+				scr = 'CREATEOK:' + gname
+				self.screenQueue.put(scr)
+				
 			else:
 				msg = 'ERR'
 				self.writeQueue.put(msg)
@@ -158,6 +161,7 @@ class SessionDisplayThread (threading.Thread):
 		self.screenQueue = screenQueue
 		self.gatheredSessions = []
 		self.gatheredSessionsNr = 1
+		self.sessionName = ''
 	
 	def parseScreen(self, screen_message):
 		
@@ -176,13 +180,32 @@ class SessionDisplayThread (threading.Thread):
 			if command == 'LOGINOK':
 				acceptedNick = ' '.join(parameter).strip()
 				self.userName = acceptedNick
-				print('Hello ' + self.userName + '! You can choose a pending game session, or create a new one!')
+				print('Hello "' + self.userName + '"! You can choose a pending game session, or create a new one!')
+				while True:
+					menuSelection = raw_input('-To list sessions type "list".\n-To start a new game session type "new".\n\nWhat would you like to do?: ')
+					if menuSelection == 'list':
+						wrt = 'LISTSES'
+						self.writeQueue.put(wrt)
+						break
+					elif menuSelection == 'new':
+						gameName = raw_input('\nType the game name: ')
+						while True:
+							maxPlayers = raw_input('\nMax players(2-8): ')
+							if maxPlayers in ['2','3','4','5','6','7','8']:
+								break
+							else:
+								print('Invalid entry. Please enter a value between 2 and 8.')
+						break
+					else:
+						print('Invalid entry. Please type "list" or "new"')	
+				wrt = 'CREATESES:' + gameName + ':' + maxPlayers
+				self.writeQueue.put(wrt)
 		
-			if command == 'SESNEW':
+			elif command == 'SESNEW':
 				self.gatheredSessions = []
 				self.gatheredSessionsNr = 1
 		
-			if command == 'SESADD':
+			elif command == 'SESADD':
 				splitted = screen_message.split(':')
 				sessionName = splitted[0]
 				playersInSession = splitted[1:]
@@ -191,7 +214,7 @@ class SessionDisplayThread (threading.Thread):
 				self.gatheredSessions.append(sessionTuple)
 				self.gatheredSessionsNr += 1
 			
-			if command == 'SESDONE':
+			elif command == 'SESDONE':
 				for iter in range(len(self.gatheredSessions)):
 					printTuple = self.gatheredSessions[iter]
 					print('Session ' + printTuple[1] + ': ' + printTuple[2] + '\n')
@@ -201,9 +224,13 @@ class SessionDisplayThread (threading.Thread):
 				wrt = 'JOINSES:' + sessionSelection
 				self.writeQueue.put(wrt)
 				
-			if command == 'JOINOK':
+			elif command == 'JOINOK':
 				wrt = 'Joined selected session.'
 				self.writeQueue.put(wrt)
+				
+			elif command == 'CREATEOK':
+				self.sessionName = ' '.join(parameter).strip()
+				print('Created a new session with the name "' + self.sessionName + '"')
 				
 	def run(self):
 		while True:

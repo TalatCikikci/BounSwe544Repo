@@ -1,6 +1,6 @@
 # Import socket module
 import socket
-import thread
+import threading
 import select
 import InputOutput
 import Queue
@@ -23,18 +23,21 @@ sendQueue = Queue.Queue()
 screenQueue = Queue.Queue()
 connectedClients = []
 clientQueue = Queue.Queue()
+printFlag = True
 
-# start paraser threads
+# start parser threads
 rt = InputOutput.ReadThread(1, bingoAppSocket, recvQueue, sendQueue, screenQueue)
 rt.start()
 
 wt = InputOutput.WriteThread(2, bingoAppSocket, sendQueue, clientQueue)
 wt.start()
 
-# Now wait for client connection.
+# Wait for client connection.
 bingoAppSocket.listen(5)
 while True:
-	print('Waiting for new connection...')
+	if printFlag:
+		print('Waiting for new connection...')
+		printFlag = False
 	# Listen socket for read event every 5 ms
 	try:
 		connections, wlist, xlist = select.select([bingoAppSocket], [], [], 0.05)
@@ -42,36 +45,39 @@ while True:
 		raise SystemExit
 		
 	
-	print('test1')
+	#print('test1')
 	# Establish connection with client.
 	for connection in connections:
-		print('test4')
+		#print('test4')
 		bingoPlayerSocket, playerAddress = connection.accept()
-		print('test2')
+		#print('test2')
 		bingoPlayerSocket.setblocking(0)
-		print('test3')
+		#print('test3')
 		connectedClients.append(bingoPlayerSocket)
-		print 'Got connection from ' , playerAddress
+		tempPort = str(playerAddress[1])
+		tempIP = playerAddress[0]
+		print('Got connection from ' + tempIP + ':' + tempPort)
+		printFlag = True
 	
 	clientList = []
 	try:
 		clientList, wlist, xlist = select.select(connectedClients, [], [], 0.05)
-		print('test5')
+		#print('test5')
 	except select.error:
 		pass
 	else:
 		for client in clientList:
 			if clientList:
-				#try:
-				print('test6')
-				data = client.recv(1024)
+				try:
+				#print('test6')
+					data = client.recv(1024)
 					#data = pickle.loads(data)
-				#except socket.error:
-					#pass
-				print('test7')
+				except socket.error:
+					pass
+				#print('test7')
 				clientQueue.put(client)
 				rt.readQueue.put(data)
-				print('test8')
+				#print('test8')
 				# if sendQueue.qsize() > 0:
 					# data = sendQueue.get()
 					# # wt.writeQueue.put(data)
@@ -82,11 +88,11 @@ while True:
 					# client.send(data)
 					# # except socket.error:
 						# # pass
-	print('test10')
-	print clientList
-	print connectedClients
+	#print('test10')
+	#print clientList
+	#print connectedClients
 	
-# Close the connections
+# Close the connections and end the threads
 rt.join()
 wt.join()
 client.close()

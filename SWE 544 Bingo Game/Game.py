@@ -1,15 +1,25 @@
 import threading
 import random
+import time
 
 class GameSession (threading.Thread):
 	
-	def __init__(self, id, userList):
+	def __init__(self, name, maxPlayers):
 		threading.Thread.__init__(self)
-		self.userList = userList
-		self.id = id
+		self.userList = []
+		self.maxPlayers = maxPlayers
+		self.name = name
+		self.timeout = 120
 		self.userGameArray = []
 		self.userUpdatedArray = []
 		self.drawnNumbers = []
+		
+	def countdown(initTime):
+		time = initTime
+		while time > 0:
+			sleep(1)
+			time = time-1
+		return True
 		
 	def prepareSession(self):
 		existingCards = range(len(self.userList))
@@ -139,7 +149,8 @@ class GameSession (threading.Thread):
 			###### CHECK FOR BINGO
 			###### CHECK FOR CINKO
 			
-			while okCount < len(self.userList)
-				
-				###### WAIT FOR OK FROM PLAYERS
+			while okCount < len(self.userList):
+				if countdown(20):
+					break
+
 		
