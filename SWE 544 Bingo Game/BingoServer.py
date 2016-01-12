@@ -40,6 +40,7 @@ while True:
 	# Establish connection with client.
 	for connection in connections:
 		bingoPlayerSocket, playerAddress = connection.accept()
+		bingoPlayerSocket.setblocking(0)
 		connectedClients.append(bingoPlayerSocket)
 		print 'Got connection from ' , playerAddress
 	

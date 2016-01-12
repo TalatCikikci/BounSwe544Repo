@@ -49,3 +49,5 @@ while True:
 	data = clientSocket.recv(1024)
 	data = pickle.loads(data)
 	print(data)
+	
+clientSocket.close()
