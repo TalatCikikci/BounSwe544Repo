@@ -20,10 +20,13 @@ class ReadThread (threading.Thread):
 			return
 		
 		else:
-			splitted = data.split(':')
-			print(splitted)
-			command = splitted[0]
-			parameter = splitted[1]
+			if ':' in data:
+				splitted = data.split(':')
+				print(splitted)
+				command = splitted[0]
+				parameter = splitted[1]
+			else:
+				command = data
 			
 			if command == 'LOGIN':
 				username = parameter.strip()
@@ -87,17 +90,20 @@ class ReadThread (threading.Thread):
 			
 class WriteThread (threading.Thread):
 
-	def __init__(self, id, csoc, writeQueue):
+	def __init__(self, id, csoc, writeQueue, clientQueue):
 		threading.Thread.__init__(self)
 		self.id = id
 		self.csoc = csoc
 		self.writeQueue = writeQueue
+		self.clientQueue = clientQueue
 
 	def run(self):
 		while True:
+			if self.clientQueue.qsize() > 0:
+				client = self.clientQueue.get()
 			if self.writeQueue.qsize() > 0:
 				queue_message = self.writeQueue.get()
-				self.csoc.send(queue_message)
+				client.send(queue_message)
 				#try:
 				#	self.csoc.send(queue_message)
 				#except socket.error:
