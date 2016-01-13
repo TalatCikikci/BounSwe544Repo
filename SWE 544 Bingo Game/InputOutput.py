@@ -14,6 +14,7 @@ class ReadThread (threading.Thread):
 		self.screenQueue = screenQueue
 		self.writeQueue = writeQueue
 		self.sessionList = []
+		self.userlist = []
 
 	def incoming_parser(self, data):
 		
@@ -32,14 +33,17 @@ class ReadThread (threading.Thread):
 			
 			if command == 'LOGIN':
 				username = ' '.join(parameter).strip()
-				######### USERNAME CHECK HERE
-					####### IF USERNAME IN USER LIST SEND LOGINREJ
-				msg = 'LOGINOK:' + username
-				self.writeQueue.put(msg)
+				if username in self.userlist:
+					msg = 'LOGINREJ'
+					self.writeQueue.put(msg)
+				else:
+					self.userlist.append(username)
+					msg = 'LOGINOK:' + username
+					self.writeQueue.put(msg)
 			
 			elif command == 'LOGOUT':
 				username = parameter.strip()
-				###### REMOVE USERNAME FROM USER LIST
+				self.userlist.remove(username)
 				msg = 'LOGOUTOK'
 				self.writeQueue.put(msg)
 			
