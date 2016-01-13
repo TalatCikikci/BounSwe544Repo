@@ -2,6 +2,7 @@ import threading
 import random
 import time
 import InputOutput
+import socket
 
 countdown = False
 
@@ -21,7 +22,7 @@ class CoundownClock (threading.Thread):
 
 class GameSession (threading.Thread):
 	
-	def __init__(self, name, maxPlayers, port):
+	def __init__(self, name, maxPlayers):
 		threading.Thread.__init__(self)
 		self.userList = []
 		self.maxPlayers = maxPlayers
@@ -31,7 +32,6 @@ class GameSession (threading.Thread):
 		self.userUpdatedArray = []
 		self.drawnNumbers = []
 		self.countdown = countdown
-		self.port = port
 		self.gameSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		
 	def countdown(initTime):

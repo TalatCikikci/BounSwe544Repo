@@ -51,18 +51,24 @@ class ReadThread (threading.Thread):
 			elif command == 'CREATESES':
 				name = parameter[0].strip()
 				maxPlayer = parameter[1]
-				port = self.port+1
-				gt = Game.GameSession(name, maxPlayer, port)
+				gt = Game.GameSession(name, maxPlayer)
 				gt.start()
 				self.sessionList.append(gt)
 				msg = 'CREATEOK:' + name
 				self.writeQueue.put(msg)
 			
 			elif command == 'LISTSES':
-				######### FOR EVERY SESSION IN SERVER
-				msg = 'SESSION:' + sessionName + ':' + sessionPlayers
-				self.writeQueue.put(msg)
-			
+				if not self.sessionList:
+					msg = 'SESEMPTY'
+					self.writeQueue.put(msg)
+				else:
+					for session in self.sessionList:
+						sessionTuple = sessionList[session]
+						sessionName = sessionTuple[0]
+						sessionPlayers = sessionTuple[1]
+						msg = 'SESSION:' + sessionName + ':' + sessionPlayers
+						self.writeQueue.put(msg)
+				
 			elif command == 'JOINSES':
 				sessionToJoin = parameter.strip()
 				######### CHECK SESSION AVAILABILITY
@@ -123,9 +129,7 @@ class WriteThread (threading.Thread):
 				client = self.clientQueue.get()
 			if self.writeQueue.qsize() > 0:
 				queue_message = self.writeQueue.get()
-				client.send(queue_message)
-				#try:
-				#	self.csoc.send(queue_message)
-				#except socket.error:
-				#	self.csoc.close()
-				#	break
+				try:
+					client.send(queue_message)
+				except socket.error:
+					pass

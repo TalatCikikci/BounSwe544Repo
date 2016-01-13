@@ -61,12 +61,16 @@ class ReadThread (threading.Thread):
 				self.screenQueue.put(scr)
 			
 			elif command == 'LOGINREJ':
-				nickname = raw_input('Enter your nickname: ')
+				nickname = raw_input('Username alredy exists. Enter another nickname: ')
 				msg = 'LOGIN:' + nickname
 				self.writeQueue.put(msg)
 			
 			elif command == 'LOGOUTOK':
 				self.csoc.close()
+				
+			elif command == 'SESEMPTY':
+				scr = 'SESEMPTY'
+				self.screenQueue.put(scr)
 			
 			elif command == 'SESSION':
 				if self.readSessions == 0:
@@ -89,15 +93,6 @@ class ReadThread (threading.Thread):
 			elif command == 'JOINOK':
 				scr = 'JOINOK'
 				self.screenQueue.put(scr)
-				
-			elif command == 'ENDTURN':
-				msg = 'ENDTURNOK'
-				self.writeQueue.put(msg)
-			
-			elif command == 'COVER':
-				numberToCover = parameter.strip()
-				msg = 'COVEROK'
-				self.writeQueue.put(msg)
 			
 			elif command == 'CINKO':
 				whoDid = parameter
@@ -180,7 +175,29 @@ class SessionDisplayThread (threading.Thread):
 			if command == 'LOGINOK':
 				acceptedNick = ' '.join(parameter).strip()
 				self.userName = acceptedNick
-				print('Hello "' + self.userName + '"! You can choose a pending game session, or create a new one!')
+				print('\nHello "' + self.userName + '"! You can choose a pending game session, or create a new one!')
+				while True:
+					menuSelection = raw_input('-To list sessions type "list".\n-To start a new game session type "new".\n\nWhat would you like to do?: ')
+					if menuSelection == 'list':
+						wrt = 'LISTSES'
+						self.writeQueue.put(wrt)
+						break
+					elif menuSelection == 'new':
+						gameName = raw_input('\nType the game name: ')
+						while True:
+							maxPlayers = raw_input('\nMax players(2-8): ')
+							if maxPlayers in ['2','3','4','5','6','7','8']:
+								break
+							else:
+								print('Invalid entry. Please enter a value between 2 and 8.')
+						wrt = 'CREATESES:' + gameName + ':' + maxPlayers
+						self.writeQueue.put(wrt)
+						break
+					else:
+						print('Invalid entry. Please type "list" or "new"')	
+			
+			elif command == 'SESEMPTY':
+				print('\nCurrently there are no active sessions.')
 				while True:
 					menuSelection = raw_input('-To list sessions type "list".\n-To start a new game session type "new".\n\nWhat would you like to do?: ')
 					if menuSelection == 'list':
