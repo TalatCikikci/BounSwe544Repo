@@ -21,7 +21,7 @@ class CoundownClock (threading.Thread):
 
 class GameSession (threading.Thread):
 	
-	def __init__(self, name, maxPlayers):
+	def __init__(self, name, maxPlayers, port):
 		threading.Thread.__init__(self)
 		self.userList = []
 		self.maxPlayers = maxPlayers
@@ -31,6 +31,8 @@ class GameSession (threading.Thread):
 		self.userUpdatedArray = []
 		self.drawnNumbers = []
 		self.countdown = countdown
+		self.port = port
+		self.gameSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		
 	def countdown(initTime):
 		time = initTime
@@ -152,6 +154,7 @@ class GameSession (threading.Thread):
 		return bingoCard, cardChecklist
 				
 	def run(self):
+
 		printFlag = True
 		timeoutCountdown = CoundownClock(self.timeout, self.countdown)
 		while len(self.userList) < self.maxPlayers:

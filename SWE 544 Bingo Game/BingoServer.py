@@ -26,7 +26,7 @@ clientQueue = Queue.Queue()
 printFlag = True
 
 # start parser threads
-rt = InputOutput.ReadThread(1, bingoAppSocket, recvQueue, sendQueue, screenQueue)
+rt = InputOutput.ReadThread(1, bingoAppSocket, recvQueue, sendQueue, screenQueue, port)
 rt.start()
 
 wt = InputOutput.WriteThread(2, bingoAppSocket, sendQueue, clientQueue)

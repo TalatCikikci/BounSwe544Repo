@@ -6,7 +6,7 @@ import Game
 
 class ReadThread (threading.Thread):
 
-	def __init__(self, id, csoc, readQueue, writeQueue, screenQueue):
+	def __init__(self, id, csoc, readQueue, writeQueue, screenQueue, port):
 		threading.Thread.__init__(self)
 		self.id = id
 		self.csoc = csoc
@@ -15,6 +15,7 @@ class ReadThread (threading.Thread):
 		self.writeQueue = writeQueue
 		self.sessionList = []
 		self.userlist = []
+		self.port = port
 
 	def incoming_parser(self, data):
 		
@@ -50,7 +51,8 @@ class ReadThread (threading.Thread):
 			elif command == 'CREATESES':
 				name = parameter[0].strip()
 				maxPlayer = parameter[1]
-				gt = Game.GameSession(name, maxPlayer)
+				port = self.port+1
+				gt = Game.GameSession(name, maxPlayer, port)
 				gt.start()
 				self.sessionList.append(gt)
 				msg = 'CREATEOK:' + name
